@@ -325,7 +325,9 @@ module Isupipe
             # タグによる取得
             tag_id_list = tx.xquery('SELECT id FROM tags WHERE name = ?', key_tag_name, as: :array).map(&:first)
             livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE tag_id IN (?) ORDER BY livestream_id DESC', tag_id_list)
-            tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', livestream_tags.map(&:livestream_id).uniq)
+            tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', livestream_tags.map(&:livestream_id).uniq).sort_by do |stream|
+              livestream_tags.find_index { |tag| tag.livestream_id == stream.id }
+            end
           else
             # 検索条件なし
             query = 'SELECT * FROM livestreams ORDER BY id DESC'
