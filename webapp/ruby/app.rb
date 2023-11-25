@@ -140,13 +140,13 @@ module Isupipe
         livestream_models.map do |livestream_model|
           owner = fill_user_response(tx, owner_models[livestream_model[:user_id]]) # TODO: ここでN+1になっている
 
-          tags = livestream_tags[livestream_model[:id]].map do |livestream_tag|
+          tags = livestream_tags[livestream_model[:id]]&.map do |livestream_tag|
             tag_model = tag_models[livestream_tag[:tag_id]]
             {
               id: tag_model.fetch(:id),
               name: tag_model.fetch(:name),
             }
-          end
+          end || []
 
           livestream_model.slice(:id, :title, :description, :playlist_url, :thumbnail_url, :start_at, :end_at).merge(
             owner:,
