@@ -22,11 +22,6 @@ mysql -u"$ISUCON_DB_USER" \
 mysql -u"$ISUCON_DB_USER" \
 		-p"$ISUCON_DB_PASSWORD" \
 		--host "$ISUCON_DB_HOST" \
-		--port "$ISUCON_DB_PORT" -e "DROP DATABASE IF EXISTS isudns"
-
-mysql -u"$ISUCON_DB_USER" \
-		-p"$ISUCON_DB_PASSWORD" \
-		--host "$ISUCON_DB_HOST" \
 		--port "$ISUCON_DB_PORT" < initdb.d/00_create_database.sql
 
 mysql -u"$ISUCON_DB_USER" \
