@@ -231,7 +231,10 @@ module Isupipe
             FALLBACK_IMAGE_BIN
           end
 
-          Digest::SHA256.hexdigest(image)
+          d = Digest::SHA256.hexdigest(image)
+          puts d
+
+          d
         end
 
         user_models.map do |user_model|
