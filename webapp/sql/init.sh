@@ -70,4 +70,4 @@ mysql -u"$ISUCON_DB_USER" \
 
 bash ../pdns/init_zone.sh 
 
-
+find ../img/ | grep -v -e "../img/$" -e "NoImage" | xargs rm -f
