@@ -9,4 +9,3 @@ gem 'puma'
 gem 'sinatra'
 gem 'sinatra-contrib'
 
-gem 'ddtrace', require: 'ddtrace/auto_instrument'
