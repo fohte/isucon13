@@ -13,9 +13,9 @@ SSH_HOSTNAME_PREFIX := isucon13
 SSH_USERNAME := isucon
 
 MYSQL_HOST := localhost
-MYSQL_USER := isuconp
-MYSQL_PASS := isuconp
-MYSQL_DB := isuconp
+MYSQL_USER := isucon
+MYSQL_PASS := isucon
+MYSQL_DB := isupipe
 
 USERS := fohte,gedorinku,unblee
 
