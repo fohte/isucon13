@@ -224,7 +224,8 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        puts "user_models=#{user_models} icon_models=#{icon_models}"
+        puts "user_models=#{user_models}"
+        puts "icon_models=#{icon_models}"
         icon_hashes = icon_models.transform_values do |icon_model|
           image = if icon_model
             icon_model.fetch(:image)
