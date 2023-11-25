@@ -1049,8 +1049,8 @@ module Isupipe
         SQL
 
         ranking = users.map do |user|
-          reactions = reactions_by_user_id[user[:id]]
-          tips = tips_by_user_id[user[:id]]
+          reactions = reactions_by_user_id[user[:id]] || 0
+          tips = tips_by_user_id[user[:id]] || 0
 
           score = reactions + tips
           UserRankingEntry.new(username: user.fetch(:name), score:)
