@@ -114,21 +114,7 @@ module Isupipe
       end
 
       def fill_livestream_response(tx, livestream_model)
-        owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livestream_model.fetch(:user_id)).first
-        owner = fill_user_response(tx, owner_model)
-
-        tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id = ?', livestream_model.fetch(:id)).map do |livestream_tag_model|
-          tag_model = tx.xquery('SELECT * FROM tags WHERE id = ?', livestream_tag_model.fetch(:tag_id)).first
-          {
-            id: tag_model.fetch(:id),
-            name: tag_model.fetch(:name),
-          }
-        end
-
-        livestream_model.slice(:id, :title, :description, :playlist_url, :thumbnail_url, :start_at, :end_at).merge(
-          owner:,
-          tags:,
-        )
+        batch_fill_livestream_response(tx, [livestream_model])[0]
       end
 
       def batch_fill_livestream_response(tx, livestream_models)
@@ -138,7 +124,7 @@ module Isupipe
         owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
-        tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        tag_models = livestream_tags.empty? ? [] : tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_models.map do |livestream_model|
           owner = owners[livestream_model[:user_id]]
@@ -1040,7 +1026,7 @@ module Isupipe
           INNER JOIN reactions r ON r.livestream_id = l.id
           GROUP BY u.id
         SQL
-        
+
         tips_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first[:sm] }
           SELECT u.id as user_id, IFNULL(SUM(l2.tip), 0) as sm FROM users u
             INNER JOIN livestreams l ON l.user_id = u.id
