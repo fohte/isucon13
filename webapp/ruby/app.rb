@@ -132,13 +132,16 @@ module Isupipe
       end
 
       def batch_fill_livestream_response(tx, livestream_models)
+        return [] if livestream_models.empty?
+
         owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
         tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_models.map do |livestream_model|
-          owner = fill_user_response(tx, owner_models[livestream_model[:user_id]]) # TODO: ここでN+1になっている
+          owner = owners[livestream_model[:user_id]]
 
           tags = livestream_tags[livestream_model[:id]]&.map do |livestream_tag|
             tag_model = tag_models[livestream_tag[:tag_id]]
@@ -203,7 +206,7 @@ module Isupipe
           if File.exist?(icon_path)
             File.binread(icon_path)
           else
-            File.binread(FALLBACK_IMAGE)
+            FALLBACK_IMAGE_BIN
           end
           # if icon_model
           #   icon_model.fetch(:image)
@@ -223,6 +226,42 @@ module Isupipe
           },
           icon_hash:,
         }
+      end
+
+      def batch_fill_user_response(tx, user_models)
+        return [] if user_models.empty?
+
+        theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+
+        icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+        icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
+          image = if icon_models[user_id]
+            icon_models[user_id].fetch(:image)
+          else
+            FALLBACK_IMAGE_BIN
+          end
+
+          d = Digest::SHA256.hexdigest(image)
+
+          [user_id, d]
+        end.to_h
+
+        user_models.map do |user_model|
+          theme_model = theme_models[user_model[:id]]
+          icon_hash = icon_hashes[user_model[:id]]
+
+          {
+            id: user_model.fetch(:id),
+            name: user_model.fetch(:name),
+            display_name: user_model.fetch(:display_name),
+            description: user_model.fetch(:description),
+            theme: {
+              id: theme_model.fetch(:id),
+              dark_mode: theme_model.fetch(:dark_mode),
+            },
+            icon_hash:,
+          }
+        end
       end
     end
 
@@ -764,6 +803,7 @@ module Isupipe
 
     BCRYPT_DEFAULT_COST = 4
     FALLBACK_IMAGE = '../img/NoImage.jpg'
+    FALLBACK_IMAGE_BIN = File.binread(FALLBACK_IMAGE)
 
     get '/api/user/:username/icon' do
       username = params[:username]
