@@ -118,13 +118,18 @@ module Isupipe
       end
 
       def batch_fill_livestream_response(tx, livestream_models)
-        return [] if livestream_models.empty? || livestream_models.first.nil?
+        return [] if livestream_models.empty?
 
+        p livestream_models
         owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        p owner_models
         owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
+        p owners
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
+        p livestream_tags
         tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        p tag_models
 
         livestream_models.map do |livestream_model|
           owner = owners[livestream_model[:user_id]]
