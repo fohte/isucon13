@@ -794,7 +794,7 @@ module Isupipe
 
       req = decode_request_body(PostIconRequest)
       image = Base64.decode64(req.image)
-      File.open("../img/#{user_id}.jpeg", mode = "w") do |f|
+      File.open("../img/#{user_id}.jpg", mode = "w") do |f|
         f.write(image)
       end
 
