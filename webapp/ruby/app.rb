@@ -68,8 +68,12 @@ module Isupipe
         )
       end
 
-      def db_transaction(&block)
-        db_conn.query('BEGIN')
+      def db_transaction(mode: nil, &block)
+        if mode.nil?
+          db_conn.query('BEGIN')
+        else
+          db_conn.query('BEGIN ' + mode)
+        end
         ok = false
         begin
           retval = block.call(db_conn)
@@ -1025,7 +1029,7 @@ module Isupipe
       # ユーザごとに、紐づく配信について、累計リアクション数、累計ライブコメント数、累計売上金額を算出
       # また、現在の合計視聴者数もだす
 
-      stats = db_transaction do |tx|
+      stats = db_transaction('READ ONLY') do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(400)
