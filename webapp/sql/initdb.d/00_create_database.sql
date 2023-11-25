@@ -6,6 +6,6 @@ CREATE DATABASE IF NOT EXISTS `isupipe`;
 
 CREATE DATABASE IF NOT EXISTS `isudns`;
 
-DROP USER IF EXISTS `isudns`@`%`;
-CREATE USER isudns IDENTIFIED BY 'isudns';
-GRANT ALL PRIVILEGES ON isudns.* TO 'isudns'@'%';
+-- DROP USER IF EXISTS `isudns`@`%`;
+-- CREATE USER isudns IDENTIFIED BY 'isudns';
+-- GRANT ALL PRIVILEGES ON isudns.* TO 'isudns'@'%';
