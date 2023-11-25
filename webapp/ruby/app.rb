@@ -668,14 +668,16 @@ module Isupipe
         tx.xquery('INSERT INTO livecomments (user_id, livestream_id, comment, tip, created_at) VALUES (?, ?, ?, ?, ?)', user_id, livestream_id, req.comment, req.tip, now)
         livecomment_id = tx.last_id
 
-        fill_livecomment_response(tx, {
-          id: livecomment_id,
-          user_id:,
-          livestream_id:,
-          comment: req.comment,
-          tip: req.tip,
-          created_at: now,
-        })
+        batch_fill_livecomment_response(tx, [
+          {
+            id: livecomment_id,
+            user_id:,
+            livestream_id:,
+            comment: req.comment,
+            tip: req.tip,
+            created_at: now,
+          }
+        ]).first
       end
 
       status 201
