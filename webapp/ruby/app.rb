@@ -239,6 +239,8 @@ module Isupipe
           d
         end
 
+        puts "icon_hashes=#{icon_hashes}"
+
         user_models.map do |user_model|
           theme_model = theme_models[user_model[:id]]
           icon_hash = icon_hashes[user_model[:id]]
