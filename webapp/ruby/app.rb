@@ -233,10 +233,17 @@ module Isupipe
 
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
-        icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+        # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
         icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
-          image = if icon_models[user_id]
-            icon_models[user_id].fetch(:image)
+          # image = if icon_models[user_id]
+          #   icon_models[user_id].fetch(:image)
+          # else
+          #   FALLBACK_IMAGE_BIN
+          # end
+          icon_path = "../img/#{user_id}.jpg"
+          image = if File.exist?(icon_path)
+            # icon_models[user_id].fetch(:image)
+            File.binread(icon_path)
           else
             FALLBACK_IMAGE_BIN
           end
