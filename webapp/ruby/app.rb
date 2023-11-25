@@ -320,7 +320,7 @@ module Isupipe
 
     # top
     get '/api/tag' do
-      tag_models = db_transaction do |tx|
+      tag_models = db_transaction('READ ONLY') do |tx|
         tx.query('SELECT * FROM tags')
       end
 
@@ -340,7 +340,7 @@ module Isupipe
 
       username = params[:username]
 
-      theme_model = db_transaction do |tx|
+      theme_model = db_transaction('READ ONLY') do |tx|
         user_model = tx.xquery('SELECT id FROM users WHERE name = ?', username).first
         unless user_model
           raise HttpError.new(404)
@@ -429,7 +429,7 @@ module Isupipe
     get '/api/livestream/search' do
       key_tag_name = params[:tag] || ''
 
-      livestreams = db_transaction do |tx|
+      livestreams = db_transaction('READ ONLY') do |tx|
         livestream_models =
           if key_tag_name != ''
             # タグによる取得
@@ -467,7 +467,7 @@ module Isupipe
         raise HttpError.new(401)
       end
 
-      livestreams = db_transaction do |tx|
+      livestreams = db_transaction('READ ONLY') do |tx|
         tx.xquery('SELECT * FROM livestreams WHERE user_id = ?', user_id).map do |livestream_model|
           fill_livestream_response(tx, livestream_model)
         end
@@ -480,7 +480,7 @@ module Isupipe
       verify_user_session!
       username = params[:username]
 
-      livestreams = db_transaction do |tx|
+      livestreams = db_transaction('READ ONLY') do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(404, 'user not found')
@@ -543,7 +543,7 @@ module Isupipe
 
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      livestream = db_transaction do |tx|
+      livestream = db_transaction('READ ONLY') do |tx|
         livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', livestream_id).first
         unless livestream_model
           raise HttpError.new(404)
@@ -570,7 +570,7 @@ module Isupipe
 
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      reports = db_transaction do |tx|
+      reports = db_transaction('READ ONLY') do |tx|
         livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', livestream_id).first
         if livestream_model.fetch(:user_id) != user_id
           raise HttpError.new(403, "can't get other streamer's livecomment reports")
@@ -589,7 +589,7 @@ module Isupipe
       verify_user_session!
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      livecomments = db_transaction do |tx|
+      livecomments = db_transaction('READ ONLY') do |tx|
         query = 'SELECT * FROM livecomments WHERE livestream_id = ? ORDER BY created_at DESC'
         limit_str = params[:limit] || ''
         if limit_str != ''
@@ -617,7 +617,7 @@ module Isupipe
 
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      ng_words = db_transaction do |tx|
+      ng_words = db_transaction('READ ONLY') do |tx|
         tx.xquery('SELECT * FROM ng_words WHERE user_id = ? AND livestream_id = ? ORDER BY created_at DESC', user_id, livestream_id).to_a
       end
 
@@ -789,7 +789,7 @@ module Isupipe
 
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      reactions = db_transaction do |tx|
+      reactions = db_transaction('READ ONLY') do |tx|
         query = 'SELECT * FROM reactions WHERE livestream_id = ? ORDER BY created_at DESC'
         limit_str = params[:limit] || ''
         if limit_str != ''
@@ -845,7 +845,7 @@ module Isupipe
     get '/api/user/:username/icon' do
       username = params[:username]
 
-      image = db_transaction do |tx|
+      image = db_transaction('READ ONLY') do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
@@ -914,7 +914,7 @@ module Isupipe
         raise HttpError.new(401)
       end
 
-      user = db_transaction do |tx|
+      user = db_transaction('READ ONLY') do |tx|
         user_model = tx.xquery('SELECT * FROM users WHERE id = ?', user_id).first
         unless user_model
           raise HttpError.new(404)
@@ -1007,7 +1007,7 @@ module Isupipe
 
       username = params[:username]
 
-      user = db_transaction do |tx|
+      user = db_transaction('READ ONLY') do |tx|
         user_model = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user_model
           raise HttpError.new(404)
