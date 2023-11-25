@@ -156,16 +156,22 @@ module Isupipe
       end
 
       def fill_livecomment_response(tx, livecomment_model)
-        comment_owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livecomment_model.fetch(:user_id)).first
+        batch_fill_livecomment_response(tx, [livecomment_model])[0]
+      end
+
+      def batch_fill_livecomment_response(tx, livecomment_models)
+        comment_owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livecomment_models.first.fetch(:user_id)).first
         comment_owner = fill_user_response(tx, comment_owner_model)
 
-        livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', livecomment_model.fetch(:livestream_id)).first
+        livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', livecomment_models.first.fetch(:livestream_id)).first
         livestream = fill_livestream_response(tx, livestream_model)
 
-        livecomment_model.slice(:id, :comment, :tip, :created_at).merge(
-          user: comment_owner,
-          livestream:,
-        )
+        livecomments = livecomment_models.map do |livecomment_model|
+          livecomment_model.slice(:id, :comment, :tip, :created_at).merge(
+            user: comment_owner,
+            livestream:,
+          )
+        end
       end
 
       def fill_livecomment_report_response(tx, report_model)
@@ -512,9 +518,8 @@ module Isupipe
           query = "#{query} LIMIT #{limit}"
         end
 
-        tx.xquery(query, livestream_id).map do |livecomment_model|
-          fill_livecomment_response(tx, livecomment_model)
-        end
+        livecomment_models = tx.xquery(query, livestream_id)
+        fill_livecomment_response(tx, livecomment_models)
       end
 
       json(livecomments)
