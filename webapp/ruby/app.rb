@@ -213,13 +213,13 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        icon_hashes = user_models.map { _1[:name] }.uniq.map do |user_name|
+        icon_hashes = user_models.uniq.map do |u|
           # image = if icon_models[user_id]
           #   icon_models[user_id].fetch(:image)
           # else
           #   FALLBACK_IMAGE_BIN
           # end
-          icon_path = "../img/#{user_name}/icon"
+          icon_path = "../img/#{u[:name]}/icon"
           image = if File.exist?(icon_path)
             # icon_models[user_id].fetch(:image)
             File.binread(icon_path)
@@ -229,7 +229,7 @@ module Isupipe
 
           d = Digest::SHA256.hexdigest(image)
 
-          [user_id, d]
+          [u[:id], d]
         end.to_h
 
         user_models.map do |user_model|
