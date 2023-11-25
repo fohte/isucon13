@@ -769,7 +769,7 @@ module Isupipe
         delete_target_livecomment_id.each do |livecomment_id|
           query = query + " id=#{livecomment_id} OR "
         end
-        query.delte_suffix!(" OR ")
+        query.delete_suffix!(" OR ")
         query = query + ";"
         tx.xquery(query)
 
