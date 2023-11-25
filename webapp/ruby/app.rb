@@ -772,7 +772,7 @@ module Isupipe
           query = "#{query} LIMIT #{limit}"
         end
 
-        batch_fill_reaction_response(tx, tx.xquery(query, livestream_id))
+        batch_fill_reaction_response(tx, tx.xquery(query, livestream_id).to_a)
       end
 
       json(reactions)
