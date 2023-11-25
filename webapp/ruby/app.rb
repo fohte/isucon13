@@ -107,11 +107,15 @@ module Isupipe
         batch_fill_livestream_response(tx, [livestream_model])[0]
       end
 
-      def batch_fill_livestream_response(tx, livestream_models)
+      def batch_fill_livestream_response(tx, livestream_models, users: nil)
         return [] if livestream_models.empty?
 
-        owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
-        owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
+        if users.nil?
+          owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+          owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
+        else
+          owners = users
+        end
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
         tag_models = livestream_tags.empty? ? [] : tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
@@ -176,11 +180,13 @@ module Isupipe
       def batch_fill_reaction_response(tx, reaction_models)
         return [] if reaction_models.empty?
 
-        user_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', reaction_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        livestream_models = tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', reaction_models.map { _1[:livestream_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+
+        user_ids = (livestream_models.values.map { _1[:user_id] } + reaction_models.map { _1[:user_id] }).uniq
+        user_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', user_ids).group_by { _1[:id] }.transform_values(&:first)
         users = batch_fill_user_response(tx, user_models.values).group_by { _1[:id] }.transform_values(&:first)
 
-        livestream_models = tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', reaction_models.map { _1[:livestream_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
-        livestreams = batch_fill_livestream_response(tx, livestream_models.values).group_by { _1[:id] }.transform_values(&:first)
+        livestreams = batch_fill_livestream_response(tx, livestream_models.values, users: users).group_by { _1[:id] }.transform_values(&:first)
 
         reaction_models.map do |reaction_model|
           user = users[reaction_model[:user_id]]
