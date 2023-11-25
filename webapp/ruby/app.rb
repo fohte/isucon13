@@ -72,7 +72,7 @@ module Isupipe
         if mode.nil?
           db_conn.query('BEGIN')
         else
-          db_conn.query('BEGIN ' + mode)
+          db_conn.query('START TRANSACTION ' + mode)
         end
         ok = false
         begin
