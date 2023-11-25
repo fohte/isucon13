@@ -819,7 +819,13 @@ module Isupipe
 
       req = decode_request_body(PostIconRequest)
       image = Base64.decode64(req.image)
-      File.open("../img/#{user_id}.jpg", mode = "w") do |f|
+
+      user_name = db_transaction do |tx|
+        tx.xquery('SELECT * FROM users WHERE id = ?', user_id).first[:name]
+      end
+      FileUtils.mkdir_p("../img/#{user_name}")
+
+      File.open("../img/#{user_name}/", mode = "w") do |f|
         f.write(image)
       end
 
