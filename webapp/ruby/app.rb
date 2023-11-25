@@ -224,11 +224,11 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        icon_hashes = icon_models.transform_values.map do |icon_model|
+        icon_hashes = icon_models.transform_values do |icon_model|
           image = if icon_model
             icon_model.fetch(:image)
           else
-            File.binread(FALLBACK_IMAGE)
+            FALLBACK_IMAGE_BIN
           end
 
           Digest::SHA256.hexdigest(image)
