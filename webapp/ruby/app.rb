@@ -598,20 +598,11 @@ module Isupipe
         end
 
         # スパム判定
-        tx.xquery('SELECT id, user_id, livestream_id, word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id)).each do |ng_word|
-          query = <<~SQL
-            SELECT COUNT(*)
-            FROM
-            (SELECT ? AS text) AS texts
-            INNER JOIN
-            (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
-            ON texts.text LIKE patterns.pattern
-          SQL
-          hit_spam = tx.xquery(query, req.comment, ng_word.fetch(:word), as: :array).first[0]
-          logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
-          if hit_spam >= 1
-            raise HttpError.new(400, 'このコメントがスパム判定されました')
-          end
+        ng_words = tx.xquery('SELECT word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id))
+        hit_spam = ng_words.count { |ng_word| req.comment.include?(ng_word.fetch(:word)) }
+        logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
+        if hit_spam >= 1
+          raise HttpError.new(400, 'このコメントがスパム判定されました')
         end
 
         now = Time.now.to_i
