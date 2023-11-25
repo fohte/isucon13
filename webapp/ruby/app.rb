@@ -1034,20 +1034,23 @@ module Isupipe
         # ランク算出
         users = tx.xquery('SELECT * FROM users').to_a
 
-        ranking = users.map do |user|
-          reactions = tx.xquery(<<~SQL, user.fetch(:id), as: :array).first[0]
-            SELECT COUNT(*) FROM users u
-            INNER JOIN livestreams l ON l.user_id = u.id
-            INNER JOIN reactions r ON r.livestream_id = l.id
-            WHERE u.id = ?
-          SQL
-
-          tips = tx.xquery(<<~SQL, user.fetch(:id), as: :array).first[0]
-            SELECT IFNULL(SUM(l2.tip), 0) FROM users u
+        reactions_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first }
+          SELECT user_id, COUNT(*) FROM users u
+          INNER JOIN livestreams l ON l.user_id = u.id
+          INNER JOIN reactions r ON r.livestream_id = l.id
+          GROUP BY user_id
+        SQL
+        
+        tips_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first }
+          SELECT user_id, IFNULL(SUM(l2.tip), 0) FROM users u
             INNER JOIN livestreams l ON l.user_id = u.id
             INNER JOIN livecomments l2 ON l2.livestream_id = l.id
-            WHERE u.id = ?
-          SQL
+          GROUP BY user_id
+        SQL
+
+        ranking = users.map do |user|
+          reactions = reactions_by_user_id[user[:id]]
+          tips = tips_by_user_id[user[:id]]
 
           score = reactions + tips
           UserRankingEntry.new(username: user.fetch(:name), score:)
