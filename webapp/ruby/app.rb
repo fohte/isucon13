@@ -1035,17 +1035,17 @@ module Isupipe
         users = tx.xquery('SELECT * FROM users').to_a
 
         reactions_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first }
-          SELECT u.user_id, COUNT(*) FROM users u
+          SELECT u.id as user_id, COUNT(*) FROM users u
           INNER JOIN livestreams l ON l.user_id = u.id
           INNER JOIN reactions r ON r.livestream_id = l.id
-          GROUP BY u.user_id
+          GROUP BY u.id
         SQL
         
         tips_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first }
-          SELECT u.user_id, IFNULL(SUM(l2.tip), 0) FROM users u
+          SELECT u.id as user_id, IFNULL(SUM(l2.tip), 0) FROM users u
             INNER JOIN livestreams l ON l.user_id = u.id
             INNER JOIN livecomments l2 ON l2.livestream_id = l.id
-          GROUP BY u.user_id
+          GROUP BY u.id
         SQL
 
         ranking = users.map do |user|
