@@ -127,7 +127,7 @@ install-packages:
 	@if which alp > /dev/null; then \
 		printf "$(LOG_INFO)✅ alp already installed$(LOG_END)"; \
 	else \
-		curl -sfL https://github.com/tkuchiki/alp/releases/download/v$(ALP_VERSION)/alp_$(shell uname -s | tr '[:upper:]' '[:lower:]')_$(shell uname -m | sed 's/aarch64/arm64/').tar.gz | sudo tar xz -C /usr/local/bin; \
+		curl -sfL https://github.com/tkuchiki/alp/releases/download/v$(ALP_VERSION)/alp_$(shell uname -s | tr '[:upper:]' '[:lower:]')_$(shell uname -m | sed 's/x86_64/amd64/').tar.gz | sudo tar xz -C /usr/local/bin; \
 		alp --version; \
 		printf "$(LOG_INFO)✅ alp installed$(LOG_END)"; \
 	fi
