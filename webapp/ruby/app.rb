@@ -160,6 +160,9 @@ module Isupipe
       end
 
       def batch_fill_livecomment_response(tx, livecomment_models)
+        head_livecomment = livecomment_models.first
+        return [] if head_livecomment.nil?
+
         comment_owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livecomment_models.first.fetch(:user_id)).first
         comment_owner = fill_user_response(tx, comment_owner_model)
 
