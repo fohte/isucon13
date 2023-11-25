@@ -754,13 +754,15 @@ module Isupipe
         word_id = tx.last_id
 
         # NGワードにヒットする過去の投稿も全削除する
-        ng_words = tx.xquery('SELECT word FROM ng_words WHERE livestream_id = ?', livestream_id).to_a
         delete_target_livecomment_id = []
+        ng_words = tx.xquery('SELECT word FROM ng_words WHERE livestream_id = ?', livestream_id).to_a
         tx.xquery('SELECT id,comment FROM livecomments WHERE livestream_id = ?', livestream_id).each do |livecomment|
-          ng_word = ng_words.fetch(:word)
-          comment = livecomment.fetch(:comment)
-          if comment.include?(ng_word)
-            delete_target_livecomment_id.push(livecomment.fetch(:id))
+          ng_words.each do |ng_word|
+            ng_w = ng_word.fetch(:word)
+            comment = livecomment.fetch(:comment)
+            if comment.include?(ng_w)
+              delete_target_livecomment_id.push(livecomment.fetch(:id))
+            end
           end
         end
         query = 'DELETE FROM livecomments WHERE '
