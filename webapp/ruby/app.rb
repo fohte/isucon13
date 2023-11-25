@@ -366,9 +366,7 @@ module Isupipe
             tx.xquery(query).to_a
           end
 
-        livestream_models.map do |livestream_model|
-          fill_livestream_response(tx, livestream_model)
-        end
+        batch_fill_livestream_response(tx, livestream_models)
       end
 
       json(livestreams)
