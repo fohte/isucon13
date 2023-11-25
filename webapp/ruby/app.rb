@@ -197,13 +197,19 @@ module Isupipe
       def fill_user_response(tx, user_model)
         theme_model = tx.xquery('SELECT * FROM themes WHERE user_id = ?', user_model.fetch(:id)).first
 
-        icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
+        # icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
+        icon_path = "../img/#{user_model.fetch(:id)}.jpg"
         image =
-          if icon_model
-            icon_model.fetch(:image)
+          if File.exist?(icon_path)
+            File.binread(icon_path)
           else
             File.binread(FALLBACK_IMAGE)
           end
+          # if icon_model
+          #   icon_model.fetch(:image)
+          # else
+          #   File.binread(FALLBACK_IMAGE)
+          # end
         icon_hash = Digest::SHA256.hexdigest(image)
 
         {
