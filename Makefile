@@ -5,12 +5,12 @@ LOG_INFO := \033[0;34m # blue
 LOG_WARN := \033[0;33m # yellow
 LOG_END := \033[0m\n # reset
 
-SERVER_1 :=
-SERVER_2 :=
-SERVER_3 :=
+SERVER_1 := 54.64.83.105
+SERVER_2 := 3.113.83.11
+SERVER_3 := 54.249.193.147
 
 SSH_HOSTNAME_PREFIX := isucon13
-SSH_USERNAME := ubuntu
+SSH_USERNAME := isucon
 
 MYSQL_HOST := localhost
 MYSQL_USER := isuconp
