@@ -519,7 +519,7 @@ module Isupipe
         end
 
         livecomment_models = tx.xquery(query, livestream_id)
-        fill_livecomment_response(tx, livecomment_models)
+        batch_fill_livecomment_response(tx, livecomment_models)
       end
 
       json(livecomments)
