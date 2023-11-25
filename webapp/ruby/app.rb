@@ -604,7 +604,7 @@ module Isupipe
         end
 
         # スパム判定
-        ng_words = tx.xquery('SELECT word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id))
+        ng_words = tx.xquery('SELECT word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id)).to_a
         hit_spam = ng_words.count { |ng_word| req.comment.include?(ng_word.fetch(:word)) }
         logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
         if hit_spam >= 1
