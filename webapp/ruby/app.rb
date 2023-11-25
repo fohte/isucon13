@@ -213,13 +213,13 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
+        icon_hashes = user_models.uniq.map do |u|
           # image = if icon_models[user_id]
           #   icon_models[user_id].fetch(:image)
           # else
           #   FALLBACK_IMAGE_BIN
           # end
-          icon_path = "../img/#{user_id}.jpg"
+          icon_path = "../img/#{u[:name]}/icon"
           image = if File.exist?(icon_path)
             # icon_models[user_id].fetch(:image)
             File.binread(icon_path)
@@ -229,7 +229,7 @@ module Isupipe
 
           d = Digest::SHA256.hexdigest(image)
 
-          [user_id, d]
+          [u[:id], d]
         end.to_h
 
         user_models.map do |user_model|
@@ -791,28 +791,16 @@ module Isupipe
     get '/api/user/:username/icon' do
       username = params[:username]
 
-      image = db_transaction do |tx|
+      image_path = db_transaction do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
         end
         # tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
-        icon_path = "../img/#{user.fetch(:id)}.jpg"
-        image =
-          if File.exist?(icon_path)
-            icon_path
-          else
-            nil
-          end
+        "/img/#{user.fetch(:id)}.jpg"
       end
 
-      content_type 'image/jpeg'
-      if image
-        # image[:image]
-        send_file image
-      else
-        send_file FALLBACK_IMAGE
-      end
+      redirect image_path, 302
     end
 
     PostIconRequest = Data.define(:image)
@@ -831,7 +819,13 @@ module Isupipe
 
       req = decode_request_body(PostIconRequest)
       image = Base64.decode64(req.image)
-      File.open("../img/#{user_id}.jpg", mode = "w") do |f|
+
+      user_name = db_transaction do |tx|
+        tx.xquery('SELECT * FROM users WHERE id = ?', user_id).first[:name]
+      end
+      FileUtils.mkdir_p("../img/#{user_name}/")
+
+      File.open("../img/#{user_name}/icon", mode = "w") do |f|
         f.write(image)
       end
 
