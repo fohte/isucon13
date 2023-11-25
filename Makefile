@@ -67,7 +67,7 @@ deploy-mysql:
 deploy-webapp:
 	@printf "$(LOG_TARGET)▶️ deploy webapp$(LOG_END)"
 	sudo rsync -avz ./webapp/ /home/isucon/webapp
-	cd /home/isucon/webapp/ruby && /home/isucon/.x bundle install --job=4
+	cd /home/isucon/webapp/ruby && /home/isucon/.x bundle install -j4
 	sudo systemctl restart isupipe-ruby.service
 	@printf "$(LOG_INFO)✅ webapp deployed$(LOG_END)"
 
