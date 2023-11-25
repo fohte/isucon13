@@ -156,7 +156,7 @@ module Isupipe
       end
 
       def fill_livecomment_response(tx, livecomment_model)
-        batch_fill_livecomment_response(tx, livecomment_model)[0]
+        batch_fill_livecomment_response(tx, [livecomment_model])[0]
       end
 
       def batch_fill_livecomment_response(tx, livecomment_models)
