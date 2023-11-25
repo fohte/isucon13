@@ -133,12 +133,13 @@ module Isupipe
 
       def batch_fill_livestream_response(tx, livestream_models)
         owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
         tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_models.map do |livestream_model|
-          owner = fill_user_response(tx, owner_models[livestream_model[:user_id]]) # TODO: ここでN+1になっている
+          owner = owners[livestream_model[:user_id]]
 
           tags = livestream_tags[livestream_model[:id]]&.map do |livestream_tag|
             tag_model = tag_models[livestream_tag[:tag_id]]
@@ -217,6 +218,38 @@ module Isupipe
           },
           icon_hash:,
         }
+      end
+
+      def batch_fill_user_response(tx, user_models)
+        theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+
+        icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+        icon_hashes = icon_models.transform_values.map do |icon_model|
+          image = if icon_model
+            icon_model.fetch(:image)
+          else
+            File.binread(FALLBACK_IMAGE)
+          end
+
+          Digest::SHA256.hexdigest(image)
+        end
+
+        user_models.map do |user_model|
+          theme_model = theme_models[user_model[:id]]
+          icon_hash = icon_hashes[user_model[:id]]
+
+          {
+            id: user_model.fetch(:id),
+            name: user_model.fetch(:name),
+            display_name: user_model.fetch(:display_name),
+            description: user_model.fetch(:description),
+            theme: {
+              id: theme_model.fetch(:id),
+              dark_mode: theme_model.fetch(:dark_mode),
+            },
+            icon_hash:,
+          }
+        end
       end
     end
 
