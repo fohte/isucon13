@@ -114,7 +114,7 @@ module Isupipe
       end
 
       def fill_livestream_response(tx, livestream_model)
-        batch_fill_livestream_response(tx, [livestream_model])[0]
+        batch_fill_livestream_response(tx, livestream_model)[0]
       end
 
       def batch_fill_livestream_response(tx, livestream_models)
@@ -1026,7 +1026,7 @@ module Isupipe
           INNER JOIN reactions r ON r.livestream_id = l.id
           GROUP BY u.id
         SQL
-        
+
         tips_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first[:sm] }
           SELECT u.id as user_id, IFNULL(SUM(l2.tip), 0) as sm FROM users u
             INNER JOIN livestreams l ON l.user_id = u.id
