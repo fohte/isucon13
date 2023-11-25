@@ -114,31 +114,21 @@ module Isupipe
       end
 
       def fill_livestream_response(tx, livestream_model)
-        owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livestream_model.fetch(:user_id)).first
-        owner = fill_user_response(tx, owner_model)
-
-        tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id = ?', livestream_model.fetch(:id)).map do |livestream_tag_model|
-          tag_model = tx.xquery('SELECT * FROM tags WHERE id = ?', livestream_tag_model.fetch(:tag_id)).first
-          {
-            id: tag_model.fetch(:id),
-            name: tag_model.fetch(:name),
-          }
-        end
-
-        livestream_model.slice(:id, :title, :description, :playlist_url, :thumbnail_url, :start_at, :end_at).merge(
-          owner:,
-          tags:,
-        )
+        batch_fill_livestream_response(tx, [livestream_model])[0]
       end
 
-      def batch_fill_livestream_response(tx, livestream_models)
+      def batch_fill_livestream_response(tx, livestream_models, users: nil)
         return [] if livestream_models.empty?
 
-        owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
-        owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
+        if users.nil?
+          owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+          owners = batch_fill_user_response(tx, owner_models.values).group_by { _1[:id] }.transform_values(&:first)
+        else
+          owners = users
+        end
 
         livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
-        tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        tag_models = livestream_tags.empty? ? [] : tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }.uniq).group_by { _1[:id] }.transform_values(&:first)
 
         livestream_models.map do |livestream_model|
           owner = owners[livestream_model[:user_id]]
@@ -194,26 +184,19 @@ module Isupipe
       end
 
       def fill_reaction_response(tx, reaction_model)
-        user_model = tx.xquery('SELECT * FROM users WHERE id = ?', reaction_model.fetch(:user_id)).first
-        user = fill_user_response(tx, user_model)
-
-        livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', reaction_model.fetch(:livestream_id)).first
-        livestream = fill_livestream_response(tx, livestream_model)
-
-        reaction_model.slice(:id, :emoji_name, :created_at).merge(
-          user:,
-          livestream:,
-        )
+        batch_fill_reaction_response(tx, [reaction_model])[0]
       end
 
       def batch_fill_reaction_response(tx, reaction_models)
         return [] if reaction_models.empty?
 
-        user_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', reaction_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        livestream_models = tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', reaction_models.map { _1[:livestream_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+
+        user_ids = (livestream_models.values.map { _1[:user_id] } + reaction_models.map { _1[:user_id] }).uniq
+        user_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', user_ids).group_by { _1[:id] }.transform_values(&:first)
         users = batch_fill_user_response(tx, user_models.values).group_by { _1[:id] }.transform_values(&:first)
 
-        livestream_models = tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', reaction_models.map { _1[:livestream_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
-        livestreams = batch_fill_livestream_response(tx, livestream_models.values).group_by { _1[:id] }.transform_values(&:first)
+        livestreams = batch_fill_livestream_response(tx, livestream_models.values, users: users).group_by { _1[:id] }.transform_values(&:first)
 
         reaction_models.map do |reaction_model|
           user = users[reaction_model[:user_id]]
@@ -227,34 +210,7 @@ module Isupipe
       end
 
       def fill_user_response(tx, user_model)
-        theme_model = tx.xquery('SELECT * FROM themes WHERE user_id = ?', user_model.fetch(:id)).first
-
-        # icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
-        icon_path = "../img/#{user_model.fetch(:id)}.jpg"
-        image =
-          if File.exist?(icon_path)
-            File.binread(icon_path)
-          else
-            FALLBACK_IMAGE_BIN
-          end
-          # if icon_model
-          #   icon_model.fetch(:image)
-          # else
-          #   File.binread(FALLBACK_IMAGE)
-          # end
-        icon_hash = Digest::SHA256.hexdigest(image)
-
-        {
-          id: user_model.fetch(:id),
-          name: user_model.fetch(:name),
-          display_name: user_model.fetch(:display_name),
-          description: user_model.fetch(:description),
-          theme: {
-            id: theme_model.fetch(:id),
-            dark_mode: theme_model.fetch(:dark_mode),
-          },
-          icon_hash:,
-        }
+        batch_fill_user_response(tx, [user_model])[0]
       end
 
       def batch_fill_user_response(tx, user_models)
@@ -263,13 +219,13 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
+        icon_hashes = user_models.uniq.map do |u|
           # image = if icon_models[user_id]
           #   icon_models[user_id].fetch(:image)
           # else
           #   FALLBACK_IMAGE_BIN
           # end
-          icon_path = "../img/#{user_id}.jpg"
+          icon_path = "../img/#{u[:name]}/icon"
           image = if File.exist?(icon_path)
             # icon_models[user_id].fetch(:image)
             File.binread(icon_path)
@@ -279,7 +235,7 @@ module Isupipe
 
           d = Digest::SHA256.hexdigest(image)
 
-          [user_id, d]
+          [u[:id], d]
         end.to_h
 
         user_models.map do |user_model|
@@ -648,20 +604,11 @@ module Isupipe
         end
 
         # スパム判定
-        tx.xquery('SELECT id, user_id, livestream_id, word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id)).each do |ng_word|
-          query = <<~SQL
-            SELECT COUNT(*)
-            FROM
-            (SELECT ? AS text) AS texts
-            INNER JOIN
-            (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
-            ON texts.text LIKE patterns.pattern
-          SQL
-          hit_spam = tx.xquery(query, req.comment, ng_word.fetch(:word), as: :array).first[0]
-          logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
-          if hit_spam >= 1
-            raise HttpError.new(400, 'このコメントがスパム判定されました')
-          end
+        ng_words = tx.xquery('SELECT word FROM ng_words WHERE user_id = ? AND livestream_id = ?', livestream_model.fetch(:user_id), livestream_model.fetch(:id))
+        hit_spam = ng_words.count { |ng_word| req.comment.include?(ng_word.fetch(:word)) }
+        logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
+        if hit_spam >= 1
+          raise HttpError.new(400, 'このコメントがスパム判定されました')
         end
 
         now = Time.now.to_i
@@ -857,28 +804,16 @@ module Isupipe
     get '/api/user/:username/icon' do
       username = params[:username]
 
-      image = db_transaction do |tx|
+      image_path = db_transaction do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
         end
         # tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
-        icon_path = "../img/#{user.fetch(:id)}.jpg"
-        image =
-          if File.exist?(icon_path)
-            icon_path
-          else
-            nil
-          end
+        "/img/#{user.fetch(:id)}.jpg"
       end
 
-      content_type 'image/jpeg'
-      if image
-        # image[:image]
-        send_file image
-      else
-        send_file FALLBACK_IMAGE
-      end
+      redirect image_path, 302
     end
 
     PostIconRequest = Data.define(:image)
@@ -897,7 +832,13 @@ module Isupipe
 
       req = decode_request_body(PostIconRequest)
       image = Base64.decode64(req.image)
-      File.open("../img/#{user_id}.jpg", mode = "w") do |f|
+
+      user_name = db_transaction do |tx|
+        tx.xquery('SELECT * FROM users WHERE id = ?', user_id).first[:name]
+      end
+      FileUtils.mkdir_p("../img/#{user_name}/")
+
+      File.open("../img/#{user_name}/icon", mode = "w") do |f|
         f.write(image)
       end
 
@@ -1056,7 +997,7 @@ module Isupipe
           INNER JOIN reactions r ON r.livestream_id = l.id
           GROUP BY u.id
         SQL
-        
+
         tips_by_user_id = tx.xquery(<<~SQL).group_by { |row| row[:user_id] }.transform_values { |rows| rows.first[:sm] }
           SELECT u.id as user_id, IFNULL(SUM(l2.tip), 0) as sm FROM users u
             INNER JOIN livestreams l ON l.user_id = u.id
