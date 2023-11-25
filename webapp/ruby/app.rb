@@ -180,16 +180,7 @@ module Isupipe
       end
 
       def fill_reaction_response(tx, reaction_model)
-        user_model = tx.xquery('SELECT * FROM users WHERE id = ?', reaction_model.fetch(:user_id)).first
-        user = fill_user_response(tx, user_model)
-
-        livestream_model = tx.xquery('SELECT * FROM livestreams WHERE id = ?', reaction_model.fetch(:livestream_id)).first
-        livestream = fill_livestream_response(tx, livestream_model)
-
-        reaction_model.slice(:id, :emoji_name, :created_at).merge(
-          user:,
-          livestream:,
-        )
+        batch_fill_reaction_response(tx, [reaction_model])[0]
       end
 
       def batch_fill_reaction_response(tx, reaction_models)
@@ -213,34 +204,7 @@ module Isupipe
       end
 
       def fill_user_response(tx, user_model)
-        theme_model = tx.xquery('SELECT * FROM themes WHERE user_id = ?', user_model.fetch(:id)).first
-
-        # icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
-        icon_path = "../img/#{user_model.fetch(:id)}.jpg"
-        image =
-          if File.exist?(icon_path)
-            File.binread(icon_path)
-          else
-            FALLBACK_IMAGE_BIN
-          end
-          # if icon_model
-          #   icon_model.fetch(:image)
-          # else
-          #   File.binread(FALLBACK_IMAGE)
-          # end
-        icon_hash = Digest::SHA256.hexdigest(image)
-
-        {
-          id: user_model.fetch(:id),
-          name: user_model.fetch(:name),
-          display_name: user_model.fetch(:display_name),
-          description: user_model.fetch(:description),
-          theme: {
-            id: theme_model.fetch(:id),
-            dark_mode: theme_model.fetch(:dark_mode),
-          },
-          icon_hash:,
-        }
+        batch_fill_user_response(tx, [user_model])[0]
       end
 
       def batch_fill_user_response(tx, user_models)
