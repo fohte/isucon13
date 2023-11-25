@@ -841,28 +841,16 @@ module Isupipe
     get '/api/user/:username/icon' do
       username = params[:username]
 
-      image = db_transaction do |tx|
+      image_path = db_transaction do |tx|
         user = tx.xquery('SELECT * FROM users WHERE name = ?', username).first
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
         end
         # tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
-        icon_path = "../img/#{user.fetch(:id)}.jpg"
-        image =
-          if File.exist?(icon_path)
-            icon_path
-          else
-            nil
-          end
+        "/img/#{user.fetch(:id)}.jpg"
       end
 
-      content_type 'image/jpeg'
-      if image
-        # image[:image]
-        send_file image
-      else
-        send_file FALLBACK_IMAGE
-      end
+      redirect image_path
     end
 
     PostIconRequest = Data.define(:image)
