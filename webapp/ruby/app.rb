@@ -765,7 +765,7 @@ module Isupipe
             end
           end
         end
-        if delete_target_livecomment_id
+        if delete_target_livecomment_id.size != 0
           query = +"DELETE FROM livecomments WHERE id IN (#{delete_target_livecomment_id.map{|s| "\"#{s}\""}.join(',')})"
           tx.xquery(query)
         end
