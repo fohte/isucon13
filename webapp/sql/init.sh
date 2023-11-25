@@ -17,12 +17,12 @@ ISUCON_DB_NAME=${ISUCON13_MYSQL_DIALCONFIG_DATABASE:-isupipe}
 mysql -u"$ISUCON_DB_USER" \
 		-p"$ISUCON_DB_PASSWORD" \
 		--host "$ISUCON_DB_HOST" \
-		--port "$ISUCON_DB_PORT" < "DROP DATABASE IF EXISTS isupipe"
+		--port "$ISUCON_DB_PORT" -e "DROP DATABASE IF EXISTS isupipe"
 
 mysql -u"$ISUCON_DB_USER" \
 		-p"$ISUCON_DB_PASSWORD" \
 		--host "$ISUCON_DB_HOST" \
-		--port "$ISUCON_DB_PORT" < "DROP DATABASE IF EXISTS isudns"
+		--port "$ISUCON_DB_PORT" -e "DROP DATABASE IF EXISTS isudns"
 
 mysql -u"$ISUCON_DB_USER" \
 		-p"$ISUCON_DB_PASSWORD" \
