@@ -220,13 +220,19 @@ module Isupipe
       def fill_user_response(tx, user_model)
         theme_model = tx.xquery('SELECT * FROM themes WHERE user_id = ?', user_model.fetch(:id)).first
 
-        icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
+        # icon_model = tx.xquery('SELECT image FROM icons WHERE user_id = ?', user_model.fetch(:id)).first
+        icon_path = "../img/#{user_model.fetch(:id)}.jpg"
         image =
-          if icon_model
-            icon_model.fetch(:image)
+          if File.exist?(icon_path)
+            File.binread(icon_path)
           else
             FALLBACK_IMAGE_BIN
           end
+          # if icon_model
+          #   icon_model.fetch(:image)
+          # else
+          #   File.binread(FALLBACK_IMAGE)
+          # end
         icon_hash = Digest::SHA256.hexdigest(image)
 
         {
@@ -247,10 +253,17 @@ module Isupipe
 
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
-        icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
+        # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
         icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
-          image = if icon_models[user_id]
-            icon_models[user_id].fetch(:image)
+          # image = if icon_models[user_id]
+          #   icon_models[user_id].fetch(:image)
+          # else
+          #   FALLBACK_IMAGE_BIN
+          # end
+          icon_path = "../img/#{user_id}.jpg"
+          image = if File.exist?(icon_path)
+            # icon_models[user_id].fetch(:image)
+            File.binread(icon_path)
           else
             FALLBACK_IMAGE_BIN
           end
@@ -825,12 +838,20 @@ module Isupipe
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
         end
-        tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
+        # tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
+        icon_path = "../img/#{user.fetch(:id)}.jpg"
+        image =
+          if File.exist?(icon_path)
+            icon_path
+          else
+            nil
+          end
       end
 
       content_type 'image/jpeg'
       if image
-        image[:image]
+        # image[:image]
+        send_file image
       else
         send_file FALLBACK_IMAGE
       end
@@ -852,12 +873,16 @@ module Isupipe
 
       req = decode_request_body(PostIconRequest)
       image = Base64.decode64(req.image)
-
-      icon_id = db_transaction do |tx|
-        tx.xquery('DELETE FROM icons WHERE user_id = ?', user_id)
-        tx.xquery('INSERT INTO icons (user_id, image) VALUES (?, ?)', user_id, image)
-        tx.last_id
+      File.open("../img/#{user_id}.jpg", mode = "w") do |f|
+        f.write(image)
       end
+
+      # icon_id = db_transaction do |tx|
+      #   tx.xquery('DELETE FROM icons WHERE user_id = ?', user_id)
+      #   tx.xquery('INSERT INTO icons (user_id, image) VALUES (?, ?)', user_id, image)
+      #   tx.last_id
+      # end
+      icon_id = rand(10000000);
 
       status 201
       json(
