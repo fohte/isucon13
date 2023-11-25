@@ -773,12 +773,20 @@ module Isupipe
         unless user
           raise HttpError.new(404, 'not found user that has the given username')
         end
-        tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
+        # tx.xquery('SELECT image FROM icons WHERE user_id = ?', user.fetch(:id)).first
+        icon_path = "../img/#{user.fetch(:id)}.jpg"
+        image =
+          if File.exist?(icon_path)
+            icon_path
+          else
+            nil
+          end
       end
 
       content_type 'image/jpeg'
       if image
-        image[:image]
+        # image[:image]
+        send_file image
       else
         send_file FALLBACK_IMAGE
       end
