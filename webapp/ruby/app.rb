@@ -219,7 +219,7 @@ module Isupipe
           # else
           #   FALLBACK_IMAGE_BIN
           # end
-          icon_path = "../img/user_name/icon"
+          icon_path = "../img/#{user_name}/icon"
           image = if File.exist?(icon_path)
             # icon_models[user_id].fetch(:image)
             File.binread(icon_path)
