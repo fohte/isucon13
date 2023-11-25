@@ -11,16 +11,6 @@ require 'securerandom'
 require 'sinatra/base'
 require 'sinatra/json'
 
-require 'ddtrace/auto_instrument'
-
-puts Socket.gethostname
-puts "datadog enabled: #{ENV['HOSTNAME'] == 'isucon13-1'}"
-
-Datadog.configure do |c|
-  c.service = 'isucon12'
-  c.tracing.enabled = Socket.gethostname == 'isucon13-1'
-end
-
 module Isupipe
   class App < Sinatra::Base
     enable :logging
