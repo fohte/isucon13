@@ -131,6 +131,31 @@ module Isupipe
         )
       end
 
+      def batch_fill_livestream_response(tx, livestream_models)
+        owner_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', livestream_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+
+        livestream_tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id IN (?)', livestream_models.map { _1[:id] }.uniq).group_by { _1[:livestream_id] }
+        tag_models = tx.xquery('SELECT * FROM tags WHERE id IN (?)', livestream_tags.values.flat_map { |values| values.map { _1[:tag_id] } }).group_by { _1[:id] }.transform_values(&:first)
+
+        livestream_models.map do |livestream_model|
+          owner = fill_user_response(tx, owner_models[livestream_model[:user_id]]) # TODO: ここでN+1になっている
+
+          tags = livestream_tags[livestream_model[:id]].flat_map do |livestream_tag|
+            tag_models[livestream_tag[:tag_id]].map do |tag_model|
+              {
+                id: tag_model.fetch(:id),
+                name: tag_model.fetch(:name),
+              }
+            end
+          end
+
+          livestream_model.slice(:id, :title, :description, :playlist_url, :thumbnail_url, :start_at, :end_at).merge(
+            owner:,
+            tags:,
+            )
+        end
+      end
+
       def fill_livecomment_response(tx, livecomment_model)
         comment_owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livecomment_model.fetch(:user_id)).first
         comment_owner = fill_user_response(tx, comment_owner_model)
