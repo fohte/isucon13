@@ -803,7 +803,7 @@ module Isupipe
       #   tx.xquery('INSERT INTO icons (user_id, image) VALUES (?, ?)', user_id, image)
       #   tx.last_id
       # end
-      icon_id = 0;
+      icon_id = rand(10000000);
 
       status 201
       json(
