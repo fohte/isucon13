@@ -1119,7 +1119,7 @@ module Isupipe
       verify_user_session!
       livestream_id = cast_as_integer(params[:livestream_id])
 
-      stats = db_transaction do |tx|
+      stats = db_transaction('READ ONLY') do |tx|
         unless tx.xquery('SELECT * FROM livestreams WHERE id = ?', livestream_id).first
           raise HttpError.new(400)
         end
@@ -1162,7 +1162,7 @@ module Isupipe
     end
 
     get '/api/payment' do
-      total_tip = db_transaction do |tx|
+      total_tip = db_transaction('READ ONLY') do |tx|
         tx.xquery('SELECT IFNULL(SUM(tip), 0) FROM livecomments', as: :array).first[0]
       end
 
