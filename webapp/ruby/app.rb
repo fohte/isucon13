@@ -759,7 +759,9 @@ module Isupipe
         tx.xquery('SELECT id,comment FROM livecomments WHERE livestream_id = ?', livestream_id).each do |livecomment|
           ng_words.each do |ng_word|
             ng_w = ng_word.fetch(:word)
+            puts ng_w
             comment = livecomment.fetch(:comment)
+            puts comment
             if comment.include?(ng_w)
               delete_target_livecomment_id.push(livecomment.fetch(:id))
             end
