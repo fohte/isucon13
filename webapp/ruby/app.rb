@@ -68,7 +68,7 @@ module Isupipe
         )
       end
 
-      def db_transaction(mode: nil, &block)
+      def db_transaction(mode = nil, &block)
         if mode.nil?
           db_conn.query('BEGIN')
         else
