@@ -765,12 +765,7 @@ module Isupipe
             end
           end
         end
-        query = +'DELETE FROM livecomments WHERE '
-        delete_target_livecomment_id.each do |livecomment_id|
-          query = query + " id=#{livecomment_id} OR "
-        end
-        query = query.delete_suffix(" OR ")
-        query = query + ";"
+        query = +"DELETE FROM livecomments WHERE id IN (#{delete_target_livecomment_id.join(',')})"
         tx.xquery(query)
 
         # tx.xquery('SELECT * FROM ng_words WHERE livestream_id = ?', livestream_id).each do |ng_word|
