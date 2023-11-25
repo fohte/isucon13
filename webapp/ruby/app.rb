@@ -836,7 +836,7 @@ module Isupipe
         "/img/#{user.fetch(:id)}.jpg"
       end
 
-      redirect image_path
+      redirect image_path, 302
     end
 
     PostIconRequest = Data.define(:image)
