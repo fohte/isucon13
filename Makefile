@@ -101,7 +101,6 @@ rotate-log-nginx:
 rotate-log-mysql:
 	@printf "$(LOG_TARGET)▶️ rotate mysql log$(LOG_END)"
 	sudo mv /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.$(TIMESTAMP).log
-	sudo systemctl restart mysql
 	@printf "$(LOG_INFO)✅ mysql log rotated (old: /var/log/mysql/mysql-slow.$(TIMESTAMP).log)$(LOG_END)"; \
 
 .PHONY: status
