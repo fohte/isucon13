@@ -9,7 +9,7 @@ SERVER_1 :=
 SERVER_2 :=
 SERVER_3 :=
 
-SSH_HOSTNAME_PREFIX := private-isu
+SSH_HOSTNAME_PREFIX := isucon13
 SSH_USERNAME := ubuntu
 
 MYSQL_HOST := localhost
