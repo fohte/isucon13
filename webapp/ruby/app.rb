@@ -114,21 +114,7 @@ module Isupipe
       end
 
       def fill_livestream_response(tx, livestream_model)
-        owner_model = tx.xquery('SELECT * FROM users WHERE id = ?', livestream_model.fetch(:user_id)).first
-        owner = fill_user_response(tx, owner_model)
-
-        tags = tx.xquery('SELECT * FROM livestream_tags WHERE livestream_id = ?', livestream_model.fetch(:id)).map do |livestream_tag_model|
-          tag_model = tx.xquery('SELECT * FROM tags WHERE id = ?', livestream_tag_model.fetch(:tag_id)).first
-          {
-            id: tag_model.fetch(:id),
-            name: tag_model.fetch(:name),
-          }
-        end
-
-        livestream_model.slice(:id, :title, :description, :playlist_url, :thumbnail_url, :start_at, :end_at).merge(
-          owner:,
-          tags:,
-        )
+        batch_fill_livestream_response(tx, [livestream_model])[0]
       end
 
       def batch_fill_livestream_response(tx, livestream_models)
