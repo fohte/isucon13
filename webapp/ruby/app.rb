@@ -602,7 +602,7 @@ module Isupipe
         hit_spam = ng_words.count { |ng_word| req.comment.include?(ng_word.fetch(:word)) }
         logger.info("[hit_spam=#{hit_spam}] comment = #{req.comment}")
         if hit_spam >= 1
-          logger.debug({ ng_words: ng_words, livestream_id: livestream_id }.inspect)
+          logger.info({ ng_words: ng_words, livestream_id: livestream_id }.inspect)
           raise HttpError.new(400, 'このコメントがスパム判定されました')
         end
 
