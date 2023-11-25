@@ -203,7 +203,7 @@ module Isupipe
           if icon_model
             icon_model.fetch(:image)
           else
-            File.binread(FALLBACK_IMAGE)
+            FALLBACK_IMAGE_BIN
           end
         icon_hash = Digest::SHA256.hexdigest(image)
 
@@ -791,6 +791,7 @@ module Isupipe
 
     BCRYPT_DEFAULT_COST = 4
     FALLBACK_IMAGE = '../img/NoImage.jpg'
+    FALLBACK_IMAGE_BIN = File.binread(FALLBACK_IMAGE)
 
     get '/api/user/:username/icon' do
       username = params[:username]
