@@ -197,6 +197,26 @@ module Isupipe
         )
       end
 
+      def batch_fill_reaction_response(tx, reaction_models)
+        return [] if reaction_models.empty?
+
+        user_models = tx.xquery('SELECT * FROM users WHERE id IN (?)', reaction_models.map { _1[:user_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        users = batch_fill_user_response(tx, user_models.values).group_by { _1[:id] }.transform_values(&:first)
+
+        livestream_models = tx.xquery('SELECT * FROM livestreams WHERE id IN (?)', reaction_models.map { _1[:livestream_id] }.uniq).group_by { _1[:id] }.transform_values(&:first)
+        livestreams = batch_fill_livestream_response(tx, livestream_models.values).group_by { _1[:id] }.transform_values(&:first)
+
+        reaction_models.map do |reaction_model|
+          user = users[reaction_model[:user_id]]
+          livestream = livestreams[reaction_model[:livestream_id]]
+
+          reaction_model.slice(:id, :emoji_name, :created_at).merge(
+            user:,
+            livestream:,
+          )
+        end
+      end
+
       def fill_user_response(tx, user_model)
         theme_model = tx.xquery('SELECT * FROM themes WHERE user_id = ?', user_model.fetch(:id)).first
 
@@ -752,9 +772,7 @@ module Isupipe
           query = "#{query} LIMIT #{limit}"
         end
 
-        tx.xquery(query, livestream_id).map do |reaction_model|
-          fill_reaction_response(tx, reaction_model)
-        end
+        batch_fill_reaction_response(tx, tx.xquery(query, livestream_id))
       end
 
       json(reactions)
