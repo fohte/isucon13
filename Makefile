@@ -106,7 +106,7 @@ rotate-log-mysql:
 .PHONY: status
 status:
 	@printf "$(LOG_TARGET)▶️ status$(LOG_END)"
-	sudo systemctl status nginx mysql isu-ruby
+	sudo systemctl status nginx mysql isupipe-ruby
 
 ####################
 # REMOTE SETUP
