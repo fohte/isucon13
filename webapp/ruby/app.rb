@@ -213,13 +213,13 @@ module Isupipe
         theme_models = tx.xquery('SELECT * FROM themes WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
 
         # icon_models = tx.xquery('SELECT * FROM icons WHERE user_id IN (?)', user_models.map { _1[:id] }.uniq).group_by { _1[:user_id] }.transform_values(&:first)
-        icon_hashes = user_models.map { _1[:id] }.uniq.map do |user_id|
+        icon_hashes = user_models.map { _1[:name] }.uniq.map do |user_name|
           # image = if icon_models[user_id]
           #   icon_models[user_id].fetch(:image)
           # else
           #   FALLBACK_IMAGE_BIN
           # end
-          icon_path = "../img/#{user_id}.jpg"
+          icon_path = "../img/user_name/icon"
           image = if File.exist?(icon_path)
             # icon_models[user_id].fetch(:image)
             File.binread(icon_path)
@@ -823,9 +823,9 @@ module Isupipe
       user_name = db_transaction do |tx|
         tx.xquery('SELECT * FROM users WHERE id = ?', user_id).first[:name]
       end
-      FileUtils.mkdir_p("../img/#{user_name}")
+      FileUtils.mkdir_p("../img/#{user_name}/")
 
-      File.open("../img/#{user_name}/", mode = "w") do |f|
+      File.open("../img/#{user_name}/icon", mode = "w") do |f|
         f.write(image)
       end
 
