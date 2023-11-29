@@ -5,9 +5,9 @@ LOG_INFO := \033[0;34m # blue
 LOG_WARN := \033[0;33m # yellow
 LOG_END := \033[0m\n # reset
 
-SERVER_1 := 54.64.83.105
-SERVER_2 := 3.113.83.11
-SERVER_3 := 54.249.193.147
+SERVER_1 := x.x.x.x
+SERVER_2 := x.x.x.x
+SERVER_3 := x.x.x.x
 
 SSH_HOSTNAME_PREFIX := isucon13
 SSH_USERNAME := isucon
