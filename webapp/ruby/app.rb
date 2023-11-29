@@ -691,24 +691,40 @@ module Isupipe
         word_id = tx.last_id
 
         # NGワードにヒットする過去の投稿も全削除する
-        tx.xquery('SELECT * FROM ng_words WHERE livestream_id = ?', livestream_id).each do |ng_word|
-          # ライブコメント一覧取得
-          tx.xquery('SELECT * FROM livecomments').each do |livecomment|
-            query = <<~SQL
-              DELETE FROM livecomments
-              WHERE
-              id = ? AND
-              livestream_id = ? AND
-              (SELECT COUNT(*)
-              FROM
-              (SELECT ? AS text) AS texts
-              INNER JOIN
-              (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
-              ON texts.text LIKE patterns.pattern) >= 1
-            SQL
-            tx.xquery(query, livecomment.fetch(:id), livestream_id, livecomment.fetch(:comment), ng_word.fetch(:word))
+        delete_target_livecomment_id = []
+        ng_words = tx.xquery('SELECT word FROM ng_words WHERE livestream_id = ?', livestream_id).to_a
+        tx.xquery('SELECT id,comment FROM livecomments WHERE livestream_id = ?', livestream_id).each do |livecomment|
+          ng_words.each do |ng_word|
+            ng_w = ng_word.fetch(:word)
+            comment = livecomment.fetch(:comment)
+            if comment.include?(ng_w)
+              delete_target_livecomment_id.push(livecomment.fetch(:id))
+            end
           end
         end
+        if delete_target_livecomment_id.size != 0
+          query = +"DELETE FROM livecomments WHERE id IN (#{delete_target_livecomment_id.map{|s| "\"#{s}\""}.join(',')})"
+          tx.xquery(query)
+        end
+
+        # tx.xquery('SELECT * FROM ng_words WHERE livestream_id = ?', livestream_id).each do |ng_word|
+        #   # ライブコメント一覧取得
+        #   tx.xquery('SELECT * FROM livecomments').each do |livecomment|
+        #     query = <<~SQL
+        #       DELETE FROM livecomments
+        #       WHERE
+        #       id = ? AND
+        #       livestream_id = ? AND
+        #       (SELECT COUNT(*)
+        #       FROM
+        #       (SELECT ? AS text) AS texts
+        #       INNER JOIN
+        #       (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
+        #       ON texts.text LIKE patterns.pattern) >= 1
+        #     SQL
+        #     tx.xquery(query, livecomment.fetch(:id), livestream_id, livecomment.fetch(:comment), ng_word.fetch(:word))
+        #   end
+        # end
 
         word_id
       end
