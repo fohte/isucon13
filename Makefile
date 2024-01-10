@@ -9,7 +9,7 @@ SERVER_1 := x.x.x.x
 SERVER_2 := x.x.x.x
 SERVER_3 := x.x.x.x
 
-SSH_HOSTNAME_PREFIX := isucon13
+SSH_HOSTNAME_PREFIX := isucon13-lt
 SSH_USERNAME := isucon
 
 MYSQL_HOST := localhost
