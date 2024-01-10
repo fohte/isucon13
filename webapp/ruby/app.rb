@@ -886,7 +886,7 @@ module Isupipe
 
         tx.xquery('INSERT INTO themes (user_id, dark_mode) VALUES(?, ?)', user_id, req.theme.fetch(:dark_mode))
 
-        out, status = Open3.capture2e('pdnsutil', 'add-record', 'u.isucon.dev', req.name, 'A', '0', POWERDNS_SUBDOMAIN_ADDRESS)
+        out, status = Open3.capture2e('pdnsutil', 'add-record', 't.isucon.pw', req.name, 'A', '0', POWERDNS_SUBDOMAIN_ADDRESS)
         unless status.success?
           raise HttpError.new(500, "pdnsutil failed with out=#{out}")
         end
